@@ -49,7 +49,7 @@ public class SpecComplianceAgent
         var capabilities = new AgentCapabilities()
         {
             Streaming = true,
-            PushNotifications = false,
+            PushNotifications = true,
         };
 
         return Task.FromResult(new AgentCard()
@@ -58,10 +58,24 @@ public class SpecComplianceAgent
             Description = "Agent to run A2A specification compliance tests.",
             Url = agentUrl,
             Version = "1.0.0",
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["http"] = new HttpAuthSecurityScheme("bearer"),
+                ["oauth2"] = new OAuth2SecurityScheme(new OAuthFlows())
+            },
+            Security = [
+                new Dictionary<string, string[]>
+                {
+                    ["http"] = [],
+                    ["oauth2"] = [],
+                }
+            ],
             DefaultInputModes = ["text"],
             DefaultOutputModes = ["text"],
             Capabilities = capabilities,
             Skills = [],
+            SupportsAuthenticatedExtendedCard = false,
+            PreferredTransport = AgentTransport.JsonRpc,
         });
     }
 }
