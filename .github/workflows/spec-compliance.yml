@@ -1,0 +1,102 @@
+name: TCK Spec Compliance
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  spec-compliance:
+    name: Check TCK Spec Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup .NET 9.x
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.x
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Checkout A2A .NET repository
+        uses: actions/checkout@v4
+
+      - name: Launch Spec Compliance Agent
+        run: |
+          dotnet run \
+            --framework net9.0 \
+            --project ./samples/AgentServer/AgentServer.csproj \
+            --launch-profile speccompliance-agent > server.log 2>&1 &
+          echo $! > agent.pid
+          cat server.log
+
+      - name: Wait for Spec Compliance Agent readiness
+        timeout-minutes: 2
+        run: |
+          set -e
+          for i in {1..40}; do
+            if curl -fsS http://localhost:5048/.well-known/agent.json > /dev/null 2>&1; then
+              echo "Agent is ready"
+              cat server.log
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Agent failed to become ready in time" >&2
+          cat server.log
+          exit 1
+
+      - name: Checkout A2A TCK repository
+        uses: actions/checkout@v4
+        with:
+          repository: a2aproject/a2a-tck
+          path: a2a-tck
+
+      - name: Patch A2A TCK sources
+        working-directory: a2a-tck
+        run: |
+          for file in ${{ github.workspace }}/.github/workflows/patches/a2a-tck/*.patch; do
+            git apply "$file"
+          done
+
+      - name: Install A2A TCK dependencies
+        working-directory: a2a-tck
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install -r requirements.txt
+
+      - name: Run A2A TCK
+        timeout-minutes: 5
+        working-directory: a2a-tck
+        continue-on-error: true
+        run: |
+          python run_tck.py \
+            --sut-url http://localhost:5048/speccompliance \
+            --category all \
+            --enable-equivalence-testing \
+            --verbose-log \
+            --report \
+            --compliance-report a2a-dotnet-report.json
+
+      - name: Stop Spec Compliance Agent
+        if: always()
+        run: |
+          if [ -f agent.pid ]; then kill $(cat agent.pid) || true; fi
+
+      - name: Present TCK Compliance Report
+        if: always()
+        run: |
+          find . -name a2a-dotnet-report.json
+          python ${{ github.workspace }}/.github/workflows/scripts/tck_json_to_md.py \
+            -i a2a-tck/reports/a2a-dotnet-report.json \
+            -o a2a-tck/reports/a2a-dotnet-report.md
+          cat a2a-tck/reports/a2a-dotnet-report.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload compliance artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spec-compliance-report
+          path: a2a-tck/reports/*
