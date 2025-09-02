@@ -75,6 +75,20 @@ public class SpecComplianceAgent
             Capabilities = capabilities,
             Skills = [],
             SupportsAuthenticatedExtendedCard = true,
+            AdditionalInterfaces = [
+                new AgentInterface{
+                    Transport = AgentTransport.JsonRpc,
+                    Url = agentUrl
+                },
+                new AgentInterface{
+                    Transport = AgentTransport.Grpc,
+                    Url = agentUrl
+                },
+                new AgentInterface{
+                    Transport = AgentTransport.HttpJson,
+                    Url = agentUrl
+                }
+            ],
             PreferredTransport = AgentTransport.JsonRpc,
         });
     }
