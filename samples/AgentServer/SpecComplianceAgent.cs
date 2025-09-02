@@ -74,7 +74,7 @@ public class SpecComplianceAgent
             DefaultOutputModes = ["text"],
             Capabilities = capabilities,
             Skills = [],
-            SupportsAuthenticatedExtendedCard = false,
+            SupportsAuthenticatedExtendedCard = true,
             PreferredTransport = AgentTransport.JsonRpc,
         });
     }
