@@ -15,6 +15,16 @@ public readonly struct AgentTransport : IEquatable<AgentTransport>
     public static AgentTransport JsonRpc { get; } = new("JSONRPC");
 
     /// <summary>
+    /// gRPC transport.
+    /// </summary>
+    public static AgentTransport Grpc { get; } = new("gRPC");
+
+    /// <summary>
+    /// HTTP+JSON transport.
+    /// </summary>
+    public static AgentTransport HttpJson { get; } = new("HTTP+JSON");
+
+    /// <summary>
     /// Gets the label associated with this <see cref="AgentTransport"/>.
     /// </summary>
     public string Label { get; }

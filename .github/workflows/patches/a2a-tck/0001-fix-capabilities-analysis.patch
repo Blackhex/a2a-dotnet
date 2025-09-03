@@ -1,0 +1,17 @@
+diff --git a/util_scripts/generate_compliance_report.py b/util_scripts/generate_compliance_report.py
+index d07b930..e5300ca 100644
+--- a/util_scripts/generate_compliance_report.py
++++ b/util_scripts/generate_compliance_report.py
+@@ -186,9 +186,9 @@ class ComplianceReportGenerator:
+         analysis = {"declared": declared_capabilities, "issues": [], "recommendations": []}
+ 
+         # Check for common capability issues
+-        if declared_capabilities.get("streaming") and "capability_results" in self.test_results:
+-            streaming_tests = [t for t in self.test_results["capability_results"].get("tests", {}) if "stream" in t]
+-            if any(self.test_results["capability_results"]["tests"][t].get("outcome") == "FAILED" for t in streaming_tests):
++        if declared_capabilities.get("streaming") and "capabilities" in self.test_results:
++            streaming_tests = [t for t in self.test_results["capabilities"].get("tests", {}) if "stream" in t]
++            if any(self.test_results["capabilities"]["tests"][t].get("outcome") == "FAILED" for t in streaming_tests):
+                 analysis["issues"].append("Streaming capability declared but tests fail - implementation incomplete")
+ 
+         return analysis
